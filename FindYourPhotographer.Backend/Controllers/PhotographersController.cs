@@ -1,17 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.Entity;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Net;
-using System.Web;
-using System.Web.Mvc;
-using FindYourPhotographer.Backend.Models;
-using FindYourPhotographer.Domain;
+﻿
 
 namespace FindYourPhotographer.Backend.Controllers
 {
+    using System.Data.Entity;
+    using System.Threading.Tasks;
+    using System.Net;
+    using System.Web.Mvc;
+    using FindYourPhotographer.Backend.Models;
+    using FindYourPhotographer.Domain;
+    using FindYourPhotographer.Backend.Helpers;
+    using System;
+
+    [Authorize(Users = "alopez@crealodigital.com")]
     public class PhotographersController : Controller
     {
         private DataContextLocal db = new DataContextLocal();
@@ -30,7 +30,7 @@ namespace FindYourPhotographer.Backend.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Photographer photographer = await db.Photographers.FindAsync(id);
+            var  photographer = await db.Photographers.FindAsync(id);
             if (photographer == null)
             {
                 return HttpNotFound();
@@ -46,21 +46,48 @@ namespace FindYourPhotographer.Backend.Controllers
         }
 
         // POST: Photographers/Create
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create([Bind(Include = "PhotographerId,CategoryId,Description,Price,IsActivte,Stock,LastEvent,Remarks")] Photographer photographer)
+        public async Task<ActionResult> Create(PhotographerView view)
         {
             if (ModelState.IsValid)
             {
+                var pic = string.Empty;
+                var folder = "~/Content/Images";
+
+                if (view.ImageFile != null)
+                {
+                    pic = FilesHelper.UploadPhoto(view.ImageFile, folder);
+                    pic = string.Format("{0}/{1}", folder, pic);
+                }
+
+                var photographer = ToPhotographer(view);
+                photographer.Image = pic;
                 db.Photographers.Add(photographer);
                 await db.SaveChangesAsync();
                 return RedirectToAction("Index");
             }
 
-            ViewBag.CategoryId = new SelectList(db.Categories, "CategoryId", "Descripcion", photographer.CategoryId);
-            return View(photographer);
+            ViewBag.CategoryId = new SelectList(db.Categories, "CategoryId", "Descripcion", view.CategoryId);
+            return View(view);
+        }
+
+        private Photographer ToPhotographer(PhotographerView view)
+        {
+            return new Photographer
+            {
+                Category = view.Category,
+                CategoryId = view.CategoryId,
+                Description = view.Description,
+                Image = view.Image,
+                IsActivte = view.IsActivte,
+                LastEvent = view.LastEvent,
+                PhotographerId = view.PhotographerId,
+                Price = view.Price,
+                Remarks = view.Remarks,
+                Stock = view.Stock,
+            };
         }
 
         // GET: Photographers/Edit/5
@@ -70,13 +97,31 @@ namespace FindYourPhotographer.Backend.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Photographer photographer = await db.Photographers.FindAsync(id);
+            var photographer = await db.Photographers.FindAsync(id);
             if (photographer == null)
             {
                 return HttpNotFound();
             }
             ViewBag.CategoryId = new SelectList(db.Categories, "CategoryId", "Descripcion", photographer.CategoryId);
-            return View(photographer);
+            var view = ToView(photographer);
+            return View(view);
+        }
+
+        private PhotographerView ToView(Photographer photographer)
+        {
+            return new PhotographerView
+            {
+                Category = photographer.Category,
+                CategoryId = photographer.CategoryId,
+                Description = photographer.Description,
+                Image = photographer.Image,
+                IsActivte = photographer.IsActivte,
+                LastEvent = photographer.LastEvent,
+                PhotographerId = photographer.PhotographerId,
+                Price = photographer.Price,
+                Remarks = photographer.Remarks,
+                Stock = photographer.Stock,
+            };
         }
 
         // POST: Photographers/Edit/5
@@ -84,16 +129,28 @@ namespace FindYourPhotographer.Backend.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit([Bind(Include = "PhotographerId,CategoryId,Description,Price,IsActivte,Stock,LastEvent,Remarks")] Photographer photographer)
+        public async Task<ActionResult> Edit( PhotographerView view)
         {
             if (ModelState.IsValid)
             {
+                var pic = view.Image;
+                var folder = "~/Content/Images";
+
+                if (view.ImageFile != null)
+                {
+                    pic = FilesHelper.UploadPhoto(view.ImageFile, folder);
+                    pic = string.Format("{0}/{1}", folder, pic);
+                }
+
+                var photographer = ToPhotographer(view);
+                photographer.Image = pic;
+
                 db.Entry(photographer).State = EntityState.Modified;
                 await db.SaveChangesAsync();
                 return RedirectToAction("Index");
             }
-            ViewBag.CategoryId = new SelectList(db.Categories, "CategoryId", "Descripcion", photographer.CategoryId);
-            return View(photographer);
+            ViewBag.CategoryId = new SelectList(db.Categories, "CategoryId", "Descripcion", view.CategoryId);
+            return View(view);
         }
 
         // GET: Photographers/Delete/5

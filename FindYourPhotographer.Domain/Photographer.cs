@@ -41,6 +41,8 @@ namespace FindYourPhotographer.Domain
         [JsonIgnore]
         public virtual Category Category { get; set; }
 
+        public string Image { get; set; }
+
         
     }
 }

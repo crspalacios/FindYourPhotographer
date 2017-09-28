@@ -1,17 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.Entity;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Net;
-using System.Web;
-using System.Web.Mvc;
-using FindYourPhotographer.Backend.Models;
-using FindYourPhotographer.Domain;
+﻿
 
 namespace FindYourPhotographer.Backend.Controllers
 {
+    using System.Data.Entity;
+    using System.Threading.Tasks;
+    using System.Net;
+    using System.Web.Mvc;
+    using FindYourPhotographer.Backend.Models;
+    using FindYourPhotographer.Domain;
+
+    [Authorize(Users = "alopez@crealodigital.com")]
     public class CategoriesController : Controller
     {
         private DataContextLocal db = new DataContextLocal();
